@@ -1,0 +1,17 @@
+venv/
+venv*/
+.mypy_cache
+.coverage
+.env
+.DS_Store
+.vscode/
+htmlcov
+poetry.lock
+test.db
+__pycache__/
+uploads/
+uploads
+*.pyc
+.DS_Store
+.vscode/
+tmp/
