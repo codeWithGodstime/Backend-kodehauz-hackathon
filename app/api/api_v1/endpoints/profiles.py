@@ -10,45 +10,22 @@ from app import actions, models
 from app.api import deps
 from app.core.config import settings
 from app.utils import slugify
+from app.models import Account
+
 
 router = APIRouter()
 CommonSession = Annotated[Session, Depends(deps.get_session)]
 
 
-def get_full_user_profile(user: models.User) -> models.UserProfile:
-    return {
-        **user.account.dict(),
-        "id": user.id,
-        "profile": user.profile,
-        "trainer": user.trainer,
-        "student": user.student,
-        "info": user.info,
-    }
-
-
-@router.get("/certificate", response_model=models.Document)
-def get_certificate(
-    *,
-    session: CommonSession,
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    cert = next((doc for doc in current_user.documents if doc.name == "certificate"), None)
-    if cert is None:
-        raise HTTPException(
-            status_code=404, detail="Specified student's certificate could not be found"
-        )
-    return cert
-
-
 @router.get("/", response_model=models.UserProfile)
 def read_profile_me(
-    session: CommonSession,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    # session: CommonSession,
+    account: Account
 ) -> Any:
     """
     Retrieve profile containing full information on the account.
     """
-    return get_full_user_profile(current_user)
+    return account
 
 
 @router.get("/{account_id}", response_model=models.UserProfile)
@@ -56,19 +33,16 @@ def read_profile(
     *,
     session: CommonSession,
     account_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    workspace: models.Workspace = Depends(deps.get_current_workspace),
+    account: models.account = Depends(deps.get_current_account),
 ) -> Any:
     """
     Get profile by ID.
     """
     account = actions.account.get(session, account_id)
-    if current_user.type != models.user.UserType.admin and account.id != current_user.account.id:
+    if account.type != models.Account.UserType.admin and account.id != account.account.id:
         raise HTTPException(status_code=401, detail="Not authorized to view this profile")
 
-    return get_full_user_profile(
-        actions.user.get_by_all(session, workspace_id=workspace.id, account_id=account.id)
-    )
+    return account
 
 
 @router.post("/", response_model=models.UserProfile, status_code=201)
@@ -76,7 +50,7 @@ def create_profile_me(
     *,
     session: CommonSession,
     data: models.ProfileCreate,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    account: models.Account = Depends(deps.get_current_account),
     response: Response,
 ) -> Any:
     """
@@ -84,13 +58,13 @@ def create_profile_me(
     """
     # Check if profile already existed.
     profile = actions.profile.get_by_expressions(
-        session, models.Profile.id == current_user.account_id
+        session, models.Profile.id == account.account_id
     )
     if profile:
         response.status_code = 200
         return actions.profile.update(session, model=profile, data=data)
-    actions.profile.create(session=session, data=data, update={"id": current_user.account_id})
-    return get_full_user_profile(current_user)
+    actions.profile.create(session=session, data=data, update={"id": account.account_id})
+    return {"data": "Check"}
 
 
 @router.put("/", response_model=models.UserProfile)
@@ -98,62 +72,48 @@ def update_profile_me(
     *,
     session: CommonSession,
     profile: Optional[models.ProfileUpdate],
-    info: Optional[models.UserInfoUpdate],
-    current_user: models.User = Depends(deps.get_current_active_user),
+    account: models.Account = Depends(deps.get_current_account),
 ) -> Any:
     """
     Update an account's profile.
     """
     if profile:
-        if current_user.profile is None:
+        if account.profile is None:
             # actions.profile.create(session=session, data=profile)
             raise HTTPException(
                 status_code=404,
                 detail="Specified profile could not be found",
             )
         else:
-            actions.profile.update(
+            account.profile.update(
                 session=session,
-                model=current_user.profile,
+                model=account.profile,
                 data=profile,
-                update={"id": current_user.profile.id},
+                update={"id": account.profile.id},
             )
 
-    if info:
-        if current_user.info is None:
-            # actions.info.create(session=session, data=info)
-            # raise HTTPException(
-            #     detail="Specified profile could not be found",
-            # )
-            # Do nothing for now.
-            pass
-        else:
-            actions.info.update(session=session, model=current_user.info[0], data=info)
-
-    session.refresh(current_user)
-    return get_full_user_profile(current_user)
+    session.refresh(account)
+    return {"data": "Check"}
 
 
 @router.put("/avatar", response_model=models.UserProfile)
 def update_avatar(
     session: CommonSession,
     avatar: UploadFile,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    workspace: models.Workspace = Depends(deps.get_current_workspace),
+    account: models.Account = Depends(deps.get_current_account),
 ) -> Any:
     """
     Upload a new avatar for the account.
     """
-    if current_user.profile is None:
+    if account.profile is None:
         raise HTTPException(status_code=404, detail="Specified profile could not be found")
     storage_path = settings.STORAGE_PATH
     file_path = path.join(
-        workspace.slug,
         "avatar",
-        slugify(current_user.account.username) + path.splitext(avatar.filename)[1],
+        slugify(account.username) + path.splitext(avatar.filename)[1],
     )
-    if not path.exists(path.join(storage_path, workspace.slug, "avatar")):
-        makedirs(path.join(storage_path, workspace.slug, "avatar"), exist_ok=True)
+    if not path.exists(path.join(storage_path, "avatar")):
+        makedirs(path.join(storage_path, "avatar"), exist_ok=True)
     avfile = path.join(storage_path, file_path)
 
     try:
@@ -167,12 +127,12 @@ def update_avatar(
     finally:
         avatar.file.close()
 
-    current_user.profile.avatar = path.join(settings.STORAGE_BASE_URL, file_path)
-    session.add(current_user)
+    account.profile.avatar = path.join(settings.STORAGE_BASE_URL, file_path)
+    session.add(account)
     session.commit()
-    session.refresh(current_user)
+    session.refresh(account)
 
-    return get_full_user_profile(current_user)
+    return {"message": "Check"}
 
 
 @router.put("/{id}", response_model=models.UserProfile)
@@ -181,8 +141,7 @@ def update_profile(
     session: CommonSession,
     id: int,
     profile: Optional[models.ProfileUpdate],
-    info: Optional[models.UserInfoUpdate],
-    current_user: models.User = Depends(deps.get_current_active_user),
+    account: models.account = Depends(deps.get_current_account),
 ) -> Any:
     """
     Update a account's profile.
@@ -192,8 +151,8 @@ def update_profile(
         raise HTTPException(status_code=404, detail="Specified profile could not be found")
 
     if (
-        current_user.type != models.user.UserType.admin
-        and current_profile.id != current_user.account.id
+        account.type != models.user.UserType.admin
+        and current_profile.id != account.account.id
     ):
         raise HTTPException(
             status_code=400,
@@ -202,15 +161,15 @@ def update_profile(
     if profile:
         actions.profile.update(session=session, model=current_profile, data=profile)
 
-    if info:
-        if current_user.info is None:
-            # actions.info.create(session=session, data=info)
-            # raise HTTPException(
-            #     detail="Specified profile could not be found",
-            # )
-            # Do nothing for now.
-            pass
-        else:
-            actions.info.update(session=session, model=current_user.info[0], data=info)
+    # if info:
+    #     if account.info is None:
+    #         # actions.info.create(session=session, data=info)
+    #         # raise HTTPException(
+    #         #     detail="Specified profile could not be found",
+    #         # )
+    #         # Do nothing for now.
+    #         pass
+    #     else:
+    #         actions.info.update(session=session, model=account.info[0], data=info)
 
-    return get_full_user_profile(current_user)
+    return {"message": "check this"}

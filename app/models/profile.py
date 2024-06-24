@@ -9,7 +9,7 @@ from .enum import BaseEnum
 # Need this check to avoid circular loading errors
 if TYPE_CHECKING:  # pragma: no cover
     from .account import Account  # noqa: F401
-    from .address import Address
+    # from .address import Address
 
 
 class Gender(BaseEnum):
@@ -37,7 +37,7 @@ class ProfileBase(ModelBase):
 # Model to be persisted in the database (note the table=True)
 class Profile(ProfileBase, table=True):
     account: "Account" = Relationship(back_populates="profile")
-    address: Optional["Address"] = Relationship(back_populates="owner")
+    # address: Optional["Address"] = Relationship(back_populates="owner")
     avatar: Optional[str]
 
 

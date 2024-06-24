@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import accounts, users
+from . import accounts
 
 # Admin routes.
 router = APIRouter()

@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models import AccountRead, UserReadPublic
+from app.models import AccountRead
 
 
 class Token(BaseModel):
@@ -11,7 +11,7 @@ class Token(BaseModel):
     expires: datetime
     token_type: str
     account: AccountRead
-    user: Optional[UserReadPublic]
+    # user: Optional[UserReadPublic]
 
 
 class TokenPayload(BaseModel):

@@ -16,7 +16,7 @@ api_router.include_router(profiles.router, prefix="/profiles", tags=["profiles"]
 
 # Admin routes
 api_router.include_router(admin.router, prefix="/admin")
-api_router.include_router(admin.wsrouter, prefix="/admin")
+# api_router.include_router(admin.wsrouter, prefix="/admin")
 
 # Streaming route
 api_router.include_router(sse_stream.router)

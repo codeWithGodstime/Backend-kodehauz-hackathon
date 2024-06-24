@@ -3,14 +3,12 @@ import json
 import logging
 from typing import Dict, List
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
 
-from app.api import deps
 from app.core.config import settings
 from app.models.event import ServerEvent
-from app.models.workspace import Workspace  # noqa
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,18 +19,18 @@ COUNTER = 0
 events: Dict[int, List[ServerEvent]] = {}
 
 
-def emit_event(event: ServerEvent, workspace: Workspace):
+def emit_event(event: ServerEvent):
     global events
-    if events.get(workspace.id) is None:
-        events[workspace.id] = []
-    events[workspace.id].append(event)
+    if events.get() is None:
+        events[0] = []
+    events[0].append(event)
 
 
-def get_event(workspace: Workspace):
+def get_event():
     global events
     try:
-        if events.get(workspace.id) is not None:
-            return events[workspace.id].pop() if len(events[workspace.id]) else None
+        if events.get(0) is not None:
+            return events[0].pop() if len(events[0]) else None
         return None
     except Exception as err:
         logger.error(err)
@@ -43,7 +41,6 @@ def get_event(workspace: Workspace):
 async def message_stream(
     request: Request,
     iterations: int = None,
-    workspace: Workspace = Depends(deps.get_current_workspace_anonymous),
 ):
     async def event_generator():
         global COUNTER
@@ -57,7 +54,7 @@ async def message_stream(
                 break
 
             # Checks for new messages and return them to client if any
-            event = get_event(workspace)
+            event = get_event()
             if event:
                 logger.debug("sending event", event)
                 yield "event: {}\nid: {}\nretry: {}\ndata: {}\n\n".format(
@@ -76,7 +73,6 @@ async def message_stream(
 async def message_stream_2(
     request: Request,
     iterations: int = None,
-    workspace: Workspace = Depends(deps.get_current_workspace_anonymous),
 ):
     async def event_generator():
         global COUNTER
@@ -90,7 +86,7 @@ async def message_stream_2(
                 break
 
             # Checks for new messages and return them to client if any
-            event = get_event(workspace)
+            event = get_event()
             if event:
                 logger.debug("sending event", event)
                 yield {
@@ -108,11 +104,10 @@ async def message_stream_2(
 @router.get("/test-event")
 async def test_event(
     name: str = "testing",
-    workspace: Workspace = Depends(deps.get_current_workspace_anonymous),
 ):
-    emit_event(ServerEvent(name=name, data=["testing"]), workspace)
+    emit_event(ServerEvent(name=name, data=["testing"]))
 
 
 @router.get("/end-event")
-async def end_event(workspace: Workspace = Depends(deps.get_current_workspace_anonymous)):
-    emit_event(ServerEvent(name="end_event", data=["end-event"]), workspace)
+async def end_event():
+    emit_event(ServerEvent(name="end_event", data=["end-event"]))

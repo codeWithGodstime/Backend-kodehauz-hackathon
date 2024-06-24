@@ -1,23 +1,16 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic.networks import EmailStr
 from sqlmodel import Field, Relationship
 
 from .base import ModelBase
 from .enum import BaseEnum
-from .user import User
-from .workspace import WorkspaceRead
+
 
 # Need this check to avoid circular loading errors
 if TYPE_CHECKING:  # pragma: no cover
-    from .document import Document  # noqa: F401
     from .profile import Profile, ProfileSmall  # noqa: F401
-    from .student import Student  # noqa: F401
-    from .submission import Submission  # noqa: F401
-    from .trainer import Trainer  # noqa: F401
-    from .userinfo import UserInfo  # noqa: F401
-    from .workspace import Workspace  # noqa: F401
 
 
 class AccountStatus(BaseEnum):
@@ -58,20 +51,6 @@ class Account(AccountBase, table=True):
         sa_relationship_kwargs={"uselist": False},
         back_populates="account",
     )
-    users: List["User"] = Relationship()
-    current_workspace_id: Optional[int] = Field(foreign_key="workspace.id")
-    currentWorkspace: "Workspace" = Relationship(
-        sa_relationship_kwargs={
-            "primaryjoin": "Account.current_workspace_id==Workspace.id",
-            "lazy": "joined",
-        }
-    )
-    workspaces: List["Workspace"] = Relationship(
-        # back_populates="accounts",
-        link_model=User,
-        # sa_relationship_args='overlaps="accounts,users"',
-        # sa_relationship_kwargs={"overlaps": "accounts,users"},
-    )
 
 
 # Properties to receive via API on creation
@@ -81,8 +60,6 @@ class AccountCreate(AccountBase):
 
 class AccountRead(AccountBase):
     id: int
-    currentWorkspace: Optional[WorkspaceRead]
-    workspaces: List[WorkspaceRead]
 
 
 class AccountReadAdmin(ModelBase):

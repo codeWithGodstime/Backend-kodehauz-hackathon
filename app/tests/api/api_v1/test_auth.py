@@ -1,35 +1,12 @@
-from datetime import datetime, timedelta
 from typing import Dict
 
-from fastapi.encoders import isoformat
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.security import verify_password
-from app.models import AccountRead, UserReadPublic
 from app.tests.utils.account import create_random_account, random_email
-from app.tests.utils.user import create_random_user
-from app.tests.utils.workspace import create_random_workspace_and_account
 from app.utils import generate_password_reset_token
-
-
-def test_get_access_token(client: TestClient, session: Session) -> None:
-    workspace, _ = create_random_workspace_and_account(session)
-    user = create_random_user(session, workspace, password="password")
-    login_data = {
-        "username": user.account.email,
-        "password": "password",
-    }
-    r = client.post(f"{settings.API_V1_STR}/login", data=login_data)
-    tokens = r.json()
-    assert r.status_code == 200
-    assert "access_token" in tokens
-    assert tokens["access_token"]
-    expire = isoformat(datetime.now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    assert tokens["expires"].split(".")[0] == expire.split(".")[0]
-    assert tokens["user"] == UserReadPublic.from_orm(user).jsond()
-    assert tokens["account"] == AccountRead.from_orm(user.account).jsond()
 
 
 def test_use_access_token(

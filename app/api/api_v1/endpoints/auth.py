@@ -51,9 +51,6 @@ def login_access_token(
         "expires": datetime.now() + access_token_expires,
         "token_type": "bearer",
         "account": account,
-        "user": actions.user.get_by_all(
-            session, account_id=account.id, workspace_id=account.current_workspace_id
-        ),
     }
 
 
