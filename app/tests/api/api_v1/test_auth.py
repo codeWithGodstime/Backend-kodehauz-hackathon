@@ -3,9 +3,10 @@ from typing import Dict
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app.actions import account as aa
 from app.core.config import settings
 from app.core.security import verify_password
-from app.tests.utils.account import create_random_account, random_email
+from app.tests.utils.utils import random_email
 from app.utils import generate_password_reset_token
 
 
@@ -65,7 +66,7 @@ def test_reset_password_links(
     session: Session,
     mock_send_email,
 ) -> None:
-    account = create_random_account(session)
+    account = aa.create_random(session)
     r = client.post(
         f"{settings.API_V1_STR}/password-recovery",
         json={"email": account.email},

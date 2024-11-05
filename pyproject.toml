@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "be-lms"
+name = "msf-fastapi"
 version = "0.1.0"
-description = "KodeCamp LMS Backend"
-authors = ["KodeCamp <admin@kode.camp>"]
+description = "MSF FastAPI Backend"
+authors = ["Aniebiet Udoh <almaudoh@gmail.com>"]
 package-mode = false
 
 [tool.poetry.dependencies]

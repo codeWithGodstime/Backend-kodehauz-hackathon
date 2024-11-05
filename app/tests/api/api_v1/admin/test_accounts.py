@@ -3,13 +3,11 @@ from typing import Dict
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app import actions
+from app.actions import account as aa
 from app.core.config import settings
 from app.models.account import AccountRead, AccountUpdate
 from app.tests.utils.account import (
-    create_random_account,
     create_random_account_with_token,
-    random_account_create,
 )
 from app.tests.utils.utils import random_email
 
@@ -17,7 +15,7 @@ from app.tests.utils.utils import random_email
 def test_get_existing_account(
     client: TestClient, superuser_account_token_headers: dict, session: Session
 ) -> None:
-    account = create_random_account(session)
+    account = aa.create_random(session)
     r = client.get(
         f"{settings.API_V1_STR}/admin/accounts/{account.id}",
         headers=superuser_account_token_headers,
@@ -40,7 +38,7 @@ def test_get_existing_account_unauthorized(client: TestClient, session: Session)
 def test_create_account_new_email(
     client: TestClient, superuser_account_token_headers: dict, session: Session
 ) -> None:
-    data = random_account_create()
+    data = aa.random()
     r = client.post(
         f"{settings.API_V1_STR}/admin/accounts",
         headers=superuser_account_token_headers,
@@ -48,7 +46,7 @@ def test_create_account_new_email(
     )
     assert r.status_code == 201
     created_account = r.json()
-    account = actions.account.get_by_email(session, email=data.email)
+    account = aa.get_by_email(session, email=data.email)
     assert account
     assert account.email == created_account["email"]
 
@@ -56,8 +54,8 @@ def test_create_account_new_email(
 def test_create_account_existing_username(
     client: TestClient, superuser_account_token_headers: dict, session: Session
 ) -> None:
-    account = create_random_account(session)
-    data = random_account_create(username=account.username)
+    account = aa.create_random(session)
+    data = aa.random(username=account.username)
     r = client.post(
         f"{settings.API_V1_STR}/admin/accounts",
         headers=superuser_account_token_headers,
@@ -71,8 +69,8 @@ def test_create_account_existing_username(
 def test_create_account_existing_email(
     client: TestClient, superuser_account_token_headers: dict, session: Session
 ) -> None:
-    account = create_random_account(session)
-    data = random_account_create(email=account.email)
+    account = aa.create_random(session)
+    data = aa.random(email=account.email)
     r = client.post(
         f"{settings.API_V1_STR}/admin/accounts",
         headers=superuser_account_token_headers,
@@ -86,8 +84,8 @@ def test_create_account_existing_email(
 def test_create_account_existing_phone(
     client: TestClient, superuser_account_token_headers: dict, session: Session
 ) -> None:
-    account = create_random_account(session)
-    data = random_account_create(phone=account.phone)
+    account = aa.create_random(session)
+    data = aa.random(phone=account.phone)
     r = client.post(
         f"{settings.API_V1_STR}/admin/accounts",
         headers=superuser_account_token_headers,
@@ -101,7 +99,7 @@ def test_create_account_existing_phone(
 def test_create_account_by_normal_account(
     client: TestClient, normal_account_token_headers: Dict[str, str]
 ) -> None:
-    data = random_account_create()
+    data = aa.random()
     r = client.post(
         f"{settings.API_V1_STR}/admin/accounts",
         headers=normal_account_token_headers,
@@ -113,7 +111,7 @@ def test_create_account_by_normal_account(
 def test_retrieve_accounts(
     client: TestClient, superuser_account_token_headers: dict, session: Session
 ) -> None:
-    accounts = [create_random_account(session) for count in range(2)]
+    accounts = [aa.create_random(session) for count in range(2)]
 
     r = client.get(
         f"{settings.API_V1_STR}/admin/accounts",
@@ -137,7 +135,7 @@ def test_account_get_unauthorized(
     session: Session,
     normal_account_token_headers: dict,
 ) -> None:
-    account = create_random_account(session)
+    account = aa.create_random(session)
     response = client.get(
         f"{settings.API_V1_STR}/admin/accounts/{account.id}",
         headers=normal_account_token_headers,
@@ -152,7 +150,7 @@ def test_account_put(
     session: Session,
     superuser_account_token_headers: dict,
 ) -> None:
-    account = create_random_account(session)
+    account = aa.create_random(session)
     data = AccountUpdate(email=random_email())
     response = client.put(
         f"{settings.API_V1_STR}/admin/accounts/{account.id}",
@@ -169,7 +167,7 @@ def test_account_put_unauthorized(
     session: Session,
     normal_account_token_headers: dict,
 ) -> None:
-    account = create_random_account(session)
+    account = aa.create_random(session)
     AccountUpdate(email=random_email())
     response = client.put(
         f"{settings.API_V1_STR}/admin/accounts/{account.id}",

@@ -43,6 +43,15 @@ class Profile(ProfileBase, table=True):
 
 # Properties to receive on item creation - same as base, no changes
 class ProfileCreate(SchemaBase):
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[date]
+    gender: Optional[Gender]
+    marital_status: Optional[MaritalStatus]
+
+
+# Properties to receive on item update - make them optional
+class ProfileUpdate(SchemaBase):
     first_name: Optional[str]
     last_name: Optional[str]
     date_of_birth: Optional[date]
@@ -50,16 +59,11 @@ class ProfileCreate(SchemaBase):
     marital_status: Optional[MaritalStatus]
 
 
-# Properties to receive on item update - make them optional
-class ProfileUpdate(ProfileCreate):
-    pass
-
-
 class ProfileRead(SchemaBase):
     id: int
     first_name: str
     last_name: str
-    date_of_birth: date
+    date_of_birth: Optional[date]
     gender: Optional[Gender]
     marital_status: Optional[MaritalStatus]
     avatar: Optional[str]

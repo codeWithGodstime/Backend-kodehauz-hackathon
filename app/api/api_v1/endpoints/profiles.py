@@ -1,14 +1,12 @@
-import shutil
-from os import makedirs, path
+from os import path
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile
 from sqlmodel import Session
 from typing_extensions import Annotated
 
-from app import actions, models
+from app import actions, models, uploads
 from app.api import deps
-from app.core.config import settings
 from app.utils import slugify
 from app.models import Account
 
@@ -20,7 +18,7 @@ CommonSession = Annotated[Session, Depends(deps.get_session)]
 @router.get("/", response_model=models.UserProfile)
 def read_profile_me(
     # session: CommonSession,
-    account: Account
+    account: Account,
 ) -> Any:
     """
     Retrieve profile containing full information on the account.
@@ -57,9 +55,7 @@ def create_profile_me(
     Create new profile.
     """
     # Check if profile already existed.
-    profile = actions.profile.get_by_expressions(
-        session, models.Profile.id == account.account_id
-    )
+    profile = actions.profile.get_by_expressions(session, models.Profile.id == account.account_id)
     if profile:
         response.status_code = 200
         return actions.profile.update(session, model=profile, data=data)
@@ -107,27 +103,10 @@ def update_avatar(
     """
     if account.profile is None:
         raise HTTPException(status_code=404, detail="Specified profile could not be found")
-    storage_path = settings.STORAGE_PATH
-    file_path = path.join(
-        "avatar",
-        slugify(account.username) + path.splitext(avatar.filename)[1],
+
+    account.profile.avatar = uploads.save_file(
+        avatar, "avatar", slugify(account.email) + path.splitext(avatar.filename)[1]
     )
-    if not path.exists(path.join(storage_path, "avatar")):
-        makedirs(path.join(storage_path, "avatar"), exist_ok=True)
-    avfile = path.join(storage_path, file_path)
-
-    try:
-        with open(avfile, "wb") as f:
-            shutil.copyfileobj(avatar.file, f)
-
-    except Exception as err:
-        raise HTTPException(
-            detail=f"{err} encountered while uploading {avatar.filename}", status_code=500
-        )
-    finally:
-        avatar.file.close()
-
-    account.profile.avatar = path.join(settings.STORAGE_BASE_URL, file_path)
     session.add(account)
     session.commit()
     session.refresh(account)
@@ -150,10 +129,7 @@ def update_profile(
     if not current_profile:
         raise HTTPException(status_code=404, detail="Specified profile could not be found")
 
-    if (
-        account.type != models.user.UserType.admin
-        and current_profile.id != account.account.id
-    ):
+    if account.type != models.user.UserType.admin and current_profile.id != account.account.id:
         raise HTTPException(
             status_code=400,
             detail="Not authorized to update profile for others",

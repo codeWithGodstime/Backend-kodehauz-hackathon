@@ -3,15 +3,14 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models import AccountRead
+from app.models import AccountReadPublicProfile
 
 
 class Token(BaseModel):
     access_token: str
     expires: datetime
     token_type: str
-    account: AccountRead
-    # user: Optional[UserReadPublic]
+    account: AccountReadPublicProfile
 
 
 class TokenPayload(BaseModel):

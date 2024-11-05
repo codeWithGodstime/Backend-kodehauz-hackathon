@@ -1,3 +1,4 @@
+# Provides CRUD operations in a reusable set of classes.
 from typing import (
     Any,
     Callable,
@@ -8,6 +9,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     get_args,
     get_origin,
 )
@@ -21,7 +23,7 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class Action(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class ModelAction(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     # Holds the specific types corresponding to generic types 'ModelType',
     # 'CreateSchemaType' and 'UpdateSchemaType' for specified subclasses.
     _type_args: Optional[Tuple[Type[ModelType], Type[CreateSchemaType], Type[UpdateSchemaType]]] = (
@@ -38,7 +40,7 @@ class Action(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         super().__init_subclass__(**kwargs)
         for base in cls.__orig_bases__:  # type: ignore[attr-defined]
             origin = get_origin(base)
-            if origin is None or not issubclass(origin, Action):
+            if origin is None or not issubclass(origin, ModelAction):
                 continue
             type_args = get_args(base)
             # Do not set the attribute for GENERIC subclasses!
@@ -130,6 +132,31 @@ class Action(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session.refresh(model)
         return model
 
+    def create_multi(
+        self,
+        session: Session,
+        *,
+        data: List[CreateSchemaType],
+        update: List[Optional[Dict[str, Any]]] = [],
+        decorator: Callable[[ModelType], Any] = None,
+    ) -> List[ModelType]:
+        assert len(data) == len(update) or len(update) == 0
+        SpecificType = self.__class__.get_type_arg()[0]
+        models = []
+        for i in range(len(data)):
+            update_dict = update[i] if update != [] else None
+            model = SpecificType.from_orm(data[i], update=update_dict)
+
+            # Modify the object model if decorator is provided.
+            if decorator is not None:
+                decorator(model)
+
+            session.add(model)
+            models.append(model)
+
+        session.commit()
+        return models
+
     def update(
         self,
         session: Session,
@@ -185,26 +212,46 @@ class Action(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             session.commit()
         return item
 
+    def random(self, **dict: dict) -> CreateSchemaType:
+        SpecificType = self.__class__.get_type_arg()[1]
+        return SpecificType(**dict)
+
+    def random_multi(self, *, count, **dict: dict) -> List[CreateSchemaType]:
+        assert count > 1, "Use random() for single object creation."
+        return [self.random(**dict) for _ in range(count)]
+
+    def create_random(
+        self, session: Session, *, count=1, **dict: dict
+    ) -> Union[ModelType, List[ModelType]]:
+        if count > 1:
+            return self.create_multi(session=session, data=self.random_multi(count=count, **dict))
+        return self.create(session=session, data=self.random(**dict))
+
 
 __classes = {}
 
 
-def base(
+def action(
     model_type: Type[ModelType],
     create_type: Type[CreateSchemaType],
     update_type: Type[UpdateSchemaType],
-) -> Action:
+    random_override: Callable[[Dict], CreateSchemaType] = None,
+) -> ModelAction:
     """
     Create a dynamic Action subclass (or pull a cached copy) and return an instance.
     """
     key = (model_type.__name__, create_type.__name__, update_type.__name__)
     if key not in __classes.keys():
-        clazz = type(
-            f"Action{model_type.__name__}",
-            (Action,),
-            {"_type_args": (model_type, create_type, update_type)},
-        )
+        # Define the class attributes
+        class_attrs = {"_type_args": (model_type, create_type, update_type)}
 
+        # If an override function is provided, add it to the class
+        if random_override:
+            class_attrs["random"] = random_override
+
+        # Dynamically create the class
+        clazz = type(f"Action{model_type.__name__}", (ModelAction,), class_attrs)
+        __classes[key] = clazz  # Cache the class for future use
     else:
         clazz = __classes[key]
 

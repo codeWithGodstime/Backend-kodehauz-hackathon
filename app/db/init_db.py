@@ -26,5 +26,6 @@ def init_db(engine: Engine, create_tables=False) -> None:
                 password=settings.FIRST_SUPERUSER_PASSWORD,
                 status=models.account.AccountStatus.active,
                 role=models.account.AccountRole.admin,
+                profile=models.ProfileCreate(first_name="Super", last_name="User"),
             )
             account = actions.account.create(session, data=data)  # noqa: F841

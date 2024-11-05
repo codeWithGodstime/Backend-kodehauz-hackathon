@@ -3,20 +3,11 @@ from typing import Dict
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app import actions
+from app.actions import account as aa
 from app.core.config import settings
-from app.models.account import (
-    Account,
-    AccountCreate,
-    AccountRole,
-    AccountStatus,
-    AccountUpdate,
-)
-from app.tests.utils.utils import (
-    random_email,
-    random_lower_string,
-    random_phone_number,
-)
+from app.models.account import AccountUpdate
+
+from app.tests.utils.utils import random_lower_string
 
 
 def account_authentication_headers(
@@ -31,12 +22,6 @@ def account_authentication_headers(
     return headers
 
 
-def create_random_account(session: Session, **data: dict) -> Account:
-    data = random_account_create(**data)
-    account = actions.account.create(session=session, data=data)
-    return account
-
-
 def create_random_account_with_token(client: TestClient, session: Session, **data: dict):
     if data.get("password") is None:
         password = random_lower_string()
@@ -44,7 +29,7 @@ def create_random_account_with_token(client: TestClient, session: Session, **dat
     else:
         password = data["password"]
 
-    account = create_random_account(session, **data)
+    account = aa.create_random(session, **data)
     r = client.post(
         f"{settings.API_V1_STR}/login",
         data={
@@ -58,17 +43,6 @@ def create_random_account_with_token(client: TestClient, session: Session, **dat
     return account, headers
 
 
-def random_account_create(**data: dict) -> AccountCreate:
-    return AccountCreate(
-        username=data.get("username", random_email()),
-        email=data.get("email", random_email()),
-        password=data.get("password", random_lower_string()),
-        phone=data.get("phone", random_phone_number()),
-        status=data.get("status", AccountStatus.active),
-        role=data.get("role", AccountRole.user),
-    )
-
-
 def authentication_token_from_email(
     *, client: TestClient, email: str, session: Session
 ) -> Dict[str, str]:
@@ -78,12 +52,10 @@ def authentication_token_from_email(
     If the account doesn't exist it is created first.
     """
     password = random_lower_string()
-    account = actions.account.get_by_email(session, email=email)
+    account = aa.get_by_email(session, email=email)
     if not account:
-        data = random_account_create(accountname=email, email=email, password=password)
-        account = actions.account.create(session, data=data)
+        account = aa.create_random(session, accountname=email, email=email, password=password)
     else:
-        data = AccountUpdate(password=password)
-        account = actions.account.update(session, model=account, data=data)
+        account = aa.update(session, model=account, data=AccountUpdate(password=password))
 
     return account_authentication_headers(client=client, email=email, password=password)

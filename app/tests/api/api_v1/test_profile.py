@@ -9,7 +9,6 @@
 # from app.models.account import AccountRole
 # from app.models.profile import ProfileUpdate
 # from app.models.user import UserType
-# from app.tests.utils.profile import create_random_profile
 # from app.utils import slugify
 
 
@@ -20,7 +19,7 @@
 #         role=AccountRole.admin,
 #     )
 #     workspace = create_random_workspace(session, account)
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     response = client.get(
 #         f"{settings.API_V1_STR}/{workspace.slug}/profiles",
 #         headers=headers,
@@ -46,7 +45,7 @@
 #         type=UserType.admin,
 #     )
 #     user = create_random_user(session, workspace)
-#     profile = create_random_profile(session, user.account)
+#     profile = pa.create_with_owner(session, accoutn=user.account, data=pa.random())
 #     response = client.get(
 #         f"{settings.API_V1_STR}/{workspace.slug}/profiles/{profile.id}",
 #         headers=headers,
@@ -63,7 +62,7 @@
 #     workspace, account, headers = create_random_workspace_and_account_with_token(
 #         client, session, role=AccountRole.admin
 #     )
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     response = client.get(
 #         f"{settings.API_V1_STR}/{workspace.slug}/profiles/{profile.id}",
 #         headers=headers,
@@ -75,7 +74,7 @@
 
 # def test_read_profile_not_permitted(client: TestClient, session: Session) -> None:
 #     workspace, account = create_random_workspace_and_account(session, role=AccountRole.admin)
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     _, headers = create_random_user_with_token(client, session, workspace)
 #     response = client.get(
 #         f"{settings.API_V1_STR}/{workspace.slug}/profiles/{profile.id}",
@@ -88,7 +87,7 @@
 # #     workspace, account, headers = create_random_workspace_and_account_with_token(
 # #         client, session, role=AccountRole.admin
 # #     )
-# #     data = random_profile_create(id=account.id)
+# #     data = actions.profile.random(id=account.id)
 # #     response = client.post(
 # #         f"{settings.API_V1_STR}/{workspace.slug}/profiles",
 # #         headers=headers,
@@ -101,7 +100,7 @@
 #     workspace, account, headers = create_random_workspace_and_account_with_token(
 #         client, session, role=AccountRole.admin
 #     )
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     profile_update = ProfileUpdate(
 #         id=account.id,
 #         first_name=faker.name(),
@@ -147,7 +146,7 @@
 #     session: Session,
 # ) -> None:
 #     workspace, account = create_random_workspace_and_account(session, role=AccountRole.admin)
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     _, headers = create_random_user_with_token(client, session, workspace)
 #     data = {
 #         "profile": ProfileUpdate().jsond(),
@@ -165,7 +164,7 @@
 #     workspace, account, headers = create_random_workspace_and_account_with_token(
 #         client, session, role=AccountRole.admin
 #     )
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     profile_data = ProfileUpdate(
 #         first_name=faker.name(),
 #         last_name=faker.name(),
@@ -195,7 +194,7 @@
 #     workspace, account, headers = create_random_workspace_and_account_with_token(
 #         client, session, role=AccountRole.admin
 #     )
-#     profile = create_random_profile(session, account)
+#     profile = pa.create_with_owner(session, account=account, data=pa.random())
 #     file_content = faker.text()
 #     fname = faker.file_name(extension="txt")
 #     fpath = join("./tmp", fname)

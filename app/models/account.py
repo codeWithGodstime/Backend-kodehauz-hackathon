@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, Optional
 from pydantic.networks import EmailStr
 from sqlmodel import Field, Relationship
 
-from .base import ModelBase
+from .base import ModelBase, SchemaBase
 from .enum import BaseEnum
+from .profile import ProfileSmall, ProfileCreate, ProfileUpdate
 
 
 # Need this check to avoid circular loading errors
 if TYPE_CHECKING:  # pragma: no cover
-    from .profile import Profile, ProfileSmall  # noqa: F401
+    from .profile import Profile  # noqa: F401
 
 
 class AccountStatus(BaseEnum):
@@ -54,8 +55,23 @@ class Account(AccountBase, table=True):
 
 
 # Properties to receive via API on creation
-class AccountCreate(AccountBase):
+class AccountCreate(SchemaBase):
+    username: str
+    email: EmailStr
+    phone: str
+    status: AccountStatus
+    role: AccountRole
     password: str
+    profile: ProfileCreate
+
+
+# Properties to receive via API on update
+class AccountUpdate(SchemaBase):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    profile: Optional[ProfileUpdate] = None
 
 
 class AccountRead(AccountBase):
@@ -78,13 +94,5 @@ class AccountReadPublic(ModelBase):
     role: AccountRole
 
 
-# Properties to receive via API on update
-class AccountUpdate(ModelBase):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    password: Optional[str] = None
-
-
 class AccountReadPublicProfile(AccountReadPublic):
-    profile: "ProfileSmall"
+    profile: ProfileSmall
