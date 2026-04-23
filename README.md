@@ -10,12 +10,12 @@
 
 #### 2. Clone the repo
 ```bash
-git clone https://github.com/kodehauz/fastapi-template.git
+git clone https://github.com/kodehauz/fastapi-template.git my_project
 ```
 
 #### 3. Create a virtual environment and activate it.
 ```bash
-cd fastapi-template
+cd my_project
 python3 -m venv venv
 source venv/bin/activate
 ```
@@ -31,7 +31,7 @@ poetry install
 ```
 
 #### 6. Add your endpoints
-
+...
 
 
 #### 7. Run the server using uvicorn

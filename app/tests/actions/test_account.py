@@ -1,7 +1,8 @@
 from sqlmodel import Session
 
-from app.actions import account as aa
-from app.core.security import verify_password
+from msflib.core.security import verify_password
+
+from app.actions import account_action as aa
 from app.models.account import Account, AccountRole, AccountUpdate, AccountStatus
 from app.tests.utils.utils import random_email, random_lower_string
 

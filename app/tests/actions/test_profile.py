@@ -1,6 +1,6 @@
 from sqlmodel import Session
 
-from app.actions import profile as pa, account as aa
+from app.actions import profile_action as pa, account_action as aa
 from app.models.profile import ProfileUpdate
 from app.tests.utils.utils import random_lower_string
 

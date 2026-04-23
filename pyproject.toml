@@ -6,29 +6,13 @@ authors = ["Aniebiet Udoh <almaudoh@gmail.com>"]
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.8"
-fastapi = "^0.100.0"
-python-multipart = "^0.0.6"
-email-validator = "^2.0.0.post2"
-requests = "^2.31.0"
-celery = "^5.3.1"
-sqlmodel = "^0.0.8"
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
-tenacity = "^8.2.0"
-emails = "^0.6"
-raven = "^6.10.0"
-gunicorn = "^20.0.4"
-jinja2 = "^3.1.0"
+python = "^3.10"
 psycopg2-binary = "^2.9.0"
-alembic = "^1.11.0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-pydantic = "1.10"
-uvicorn = "^0.23.1"
-poetry-dotenv-plugin="0.2.0"
-redis = "^4.6.0"
-httpx = "^0.24.1"
-sse-starlette = "^2.1.0"
-asyncio = "^3.4.3"
+msflib = { git = "https://github.com/msflib/fastapi.git", subdirectory = "core", rev="dev-0.2.x" }
+msflib-auth = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/auth", rev="dev-0.2.x" }
+msflib-account = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/account", rev="dev-0.2.x" }
+msflib-workspaces = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/workspaces", rev="dev-0.2.x" }
+
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4"

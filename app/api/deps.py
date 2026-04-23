@@ -1,80 +1,39 @@
-from typing import Generator
+import logging
 
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
-from pydantic import ValidationError
+from msflib.api.deps import get_keystore_factory, get_session_factory
+from msflib.auth.deps import get_account_dependencies
 
-from app import models, schemas
-from app.core import security, store
-from app.core.config import settings
-from app.db.session import Session, engine
+from ..core.config import settings
+from ..db.session import engine
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login")
-anonymous_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login", auto_error=False)
+from ..models import Account, AccountStatus
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def get_session() -> Generator:
-    with Session(engine) as session:
-        yield session
+# Database Session
+get_session = get_session_factory(engine)
 
+# Redis Keystore (falls back to MapStore if Redis server is not found).
+get_session = get_session_factory(
+    redis_host=settings.REDIS_HOST,
+    redis_password=settings.REDIS_PASSWORD,
+    redis_port=settings.REDIS_PORT,
+)
 
-def get_keystore() -> store.StoreInterface:
-    if settings.REDIS_HOST and settings.REDIS_PASSWORD:
-        return store.RedisStore(
-            host=settings.REDIS_HOST, password=settings.REDIS_PASSWORD, port=settings.REDIS_PORT
-        )
-    else:
-        return store.MapStore()
-
-
-def get_current_account(
-    session: Session = Depends(get_session),
-    token: str = Depends(reusable_oauth2),
-    keystore: store.StoreInterface = Depends(get_keystore),
-) -> models.Account:
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
-        token_data = schemas.TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
-        raise HTTPException(
-            status_code=401,
-            detail="Could not validate credentials",
-        )
-    if keystore.check(token_data.sub):
-        raise HTTPException(status_code=401, detail="Token expired")
-
-    user = session.get(models.Account, token_data.sub)
-    if not user:
-        raise HTTPException(status_code=404, detail="Account not found")
-    return user
-
-
-def get_current_account_or_none(
-    session: Session = Depends(get_session),
-    token: str = Depends(anonymous_oauth2),
-    keystore: store.StoreInterface = Depends(get_keystore),
-) -> models.Account:
-    if token:
-        return get_current_account(session, token, keystore)
-
-    return None
-
-
-def get_current_active_account(
-    account: models.Account = Depends(get_current_account),
-) -> models.Account:
-    if account.status not in [
-        models.account.AccountStatus.active,
-        models.account.AccountStatus.online,
-    ]:
-        raise HTTPException(status_code=401, detail="The account is inactive")
-    return account
-
-
-def get_current_active_superuser(
-    account: models.Account = Depends(get_current_active_account),
-) -> models.Account:
-    if not account.role == models.account.AccountRole.root:
-        raise HTTPException(status_code=401, detail="Not authorized")
-    return account
+(
+    get_current_account,
+    get_current_account_or_none,
+    get_current_active_account,
+    get_current_active_superuser,
+    RoleCheck,
+) = vars(
+    get_account_dependencies(
+        AccountModel=Account,
+        oauth_token_url=f"{settings.API_V1_STR}/login",
+        secret_key=settings.SECRET_KEY,
+        active_statuses=[AccountStatus.active, AccountStatus.online],
+        session_dep=get_session,
+        keystore_dep=get_keystore,
+    )
+).values()
