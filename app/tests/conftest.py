@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Dict, Generator
 
 import pytest
@@ -5,16 +6,22 @@ from faker import Faker
 from fastapi.testclient import TestClient
 from sqlmodel import Session, create_engine
 
+from msflib.core.store import MapStore
+from msflib.utils.tests.account import (
+    account_authentication_headers,
+    authentication_token_from_email,
+)
+
+from app.actions import account_action
 from app.api.deps import get_keystore, get_session
 from app.core.config import settings
-from app.core.store import MapStore
 from app.db.init_db import init_db
 from app.main import app
-from app.tests.utils.account import authentication_token_from_email
-from app.tests.utils.utils import get_superuser_token_headers
 
 TEST_DATABASE_URL = "sqlite:///./tmp/test.db"
 DUMP_DB_QUERIES = False  # change to True to display all DB SQL queries
+
+Path("tmp").mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(
     TEST_DATABASE_URL,
@@ -108,13 +115,22 @@ def client(session, mapstore) -> Generator:
 
 @pytest.fixture(scope="function")
 def superuser_account_token_headers(client: TestClient) -> Dict[str, str]:
-    return get_superuser_token_headers(client)
+    return account_authentication_headers(
+        client=client,
+        email=settings.FIRST_SUPERUSER,
+        password=settings.FIRST_SUPERUSER_PASSWORD,
+        oauth_url=f"{settings.API_V1_STR}/login",
+    )
 
 
 @pytest.fixture(scope="function")
 def normal_account_token_headers(client: TestClient, session: Session) -> Dict[str, str]:
     return authentication_token_from_email(
-        client=client, email=settings.EMAIL_TEST_ACCOUNT, session=session
+        client=client,
+        email=settings.EMAIL_TEST_ACCOUNT,
+        session=session,
+        account_action=account_action,
+        oauth_url=f"{settings.API_V1_STR}/login",
     )
 
 
@@ -125,4 +141,4 @@ def faker() -> Faker:
 
 @pytest.fixture(scope="function")
 def mock_send_email(mocker):
-    return mocker.patch("app.utils.send_email", return_value=None)
+    return mocker.patch("msflib.services.email.send_email", return_value=None)

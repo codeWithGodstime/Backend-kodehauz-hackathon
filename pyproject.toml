@@ -8,10 +8,10 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.10"
 psycopg2-binary = "^2.9.0"
-msflib = { git = "https://github.com/msflib/fastapi.git", subdirectory = "core", rev="dev-0.2.x" }
-msflib-auth = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/auth", rev="dev-0.2.x" }
-msflib-account = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/account", rev="dev-0.2.x" }
-msflib-workspaces = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/workspaces", rev="dev-0.2.x" }
+msflib = { git = "https://github.com/msflib/fastapi.git", subdirectory = "core", rev="dev" }
+msflib-auth = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/auth", rev="dev" }
+msflib-account = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/account", rev="dev" }
+msflib-workspaces = { git = "https://github.com/msflib/fastapi.git", subdirectory = "modules/workspaces", rev="dev" }
 
 
 [tool.poetry.group.dev.dependencies]
@@ -21,6 +21,7 @@ isort = "^5.12.0"
 autoflake = "^1.3.1"
 flake8 = "^3.7.9"
 ruff = "0.4.2"
+pre-commit = "^3.8.0"
 
 [tool.poetry.group.test.dependencies]
 faker = "^19.1.0"

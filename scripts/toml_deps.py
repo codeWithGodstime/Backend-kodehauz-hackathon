@@ -184,9 +184,10 @@ def export_ref(repo_path: Path, export_dir: Path, ref: str) -> None:
         raise RuntimeError(f"Failed to export ref '{ref}' from {repo_path}")
 
 
-def rewrite_pyproject(pyproject_path: Path, replacements: dict[tuple[str, str], str]) -> None:
+def rewrite_pyproject(pyproject_path: Path, replacements: dict[tuple[str, str], Path]) -> None:
     output: list[str] = []
     current_section = ""
+    pyproject_dir = pyproject_path.parent
 
     for line in pyproject_path.read_text().splitlines(keepends=True):
         section_match = re.match(r"^\[(.+)\]\s*$", line)
@@ -200,9 +201,8 @@ def rewrite_pyproject(pyproject_path: Path, replacements: dict[tuple[str, str], 
             dep_name = dep_match.group(1)
             key = (current_section, dep_name)
             if key in replacements:
-                output.append(
-                    f'{dep_name} = {{ path = "{replacements[key]}" }}\n'  # noqa: E201, E202
-                )
+                replacement_path = os.path.relpath(replacements[key], pyproject_dir)
+                output.append(f'{dep_name} = {{ path = "{Path(replacement_path).as_posix()}" }}\n')
                 continue
 
         output.append(line)
@@ -212,13 +212,13 @@ def rewrite_pyproject(pyproject_path: Path, replacements: dict[tuple[str, str], 
 
 def rewrite_exported_pyprojects(
     export_root: Path,
-    path_by_target: dict[tuple[str, str, str], str],
+    path_by_target: dict[tuple[str, str, str], Path],
 ) -> None:
     repos_root = export_root / "_repos"
     for nested_pyproject in export_root.glob("**/pyproject.toml"):
         if repos_root in nested_pyproject.parents:
             continue
-        replacements: dict[tuple[str, str], str] = {}
+        replacements: dict[tuple[str, str], Path] = {}
         nested_targets = load_all_git_targets(nested_pyproject)
         for target in nested_targets:
             key = (
@@ -251,9 +251,9 @@ def main() -> int:
 
     export_root.mkdir(parents=True, exist_ok=True)
 
-    replacements: dict[tuple[str, str], str] = {}
+    replacements: dict[tuple[str, str], Path] = {}
     exported_once: set[tuple[str, str]] = set()
-    path_by_target: dict[tuple[str, str, str], str] = {}
+    path_by_target: dict[tuple[str, str, str], Path] = {}
 
     for target in targets:
         normalized = normalize_git_url(target.git_url)
@@ -266,7 +266,7 @@ def main() -> int:
             export_ref(repo_path, ref_export_dir, target.ref)
             exported_once.add(ref_key)
 
-        dep_path = (ref_export_dir / target.subdirectory).as_posix()
+        dep_path = ref_export_dir / target.subdirectory
         replacements[(target.section, target.name)] = dep_path
         path_by_target[(normalized, target.subdirectory, target.ref)] = dep_path
 

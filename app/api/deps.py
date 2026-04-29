@@ -15,25 +15,23 @@ logger = logging.getLogger(__name__)
 get_session = get_session_factory(engine)
 
 # Redis Keystore (falls back to MapStore if Redis server is not found).
-get_session = get_session_factory(
+get_keystore = get_keystore_factory(
     redis_host=settings.REDIS_HOST,
     redis_password=settings.REDIS_PASSWORD,
-    redis_port=settings.REDIS_PORT,
+    redis_port=int(settings.REDIS_PORT) if settings.REDIS_PORT else 6379,
 )
 
-(
-    get_current_account,
-    get_current_account_or_none,
-    get_current_active_account,
-    get_current_active_superuser,
-    RoleCheck,
-) = vars(
-    get_account_dependencies(
-        AccountModel=Account,
-        oauth_token_url=f"{settings.API_V1_STR}/login",
-        secret_key=settings.SECRET_KEY,
-        active_statuses=[AccountStatus.active, AccountStatus.online],
-        session_dep=get_session,
-        keystore_dep=get_keystore,
-    )
-).values()
+account_dependencies = get_account_dependencies(
+    AccountModel=Account,
+    oauth_token_url=f"{settings.API_V1_STR}/login",
+    secret_key=settings.SECRET_KEY,
+    active_statuses=[AccountStatus.active, AccountStatus.online],
+    session_dep=get_session,
+    keystore_dep=get_keystore,
+)
+
+get_current_account = account_dependencies.get_current_account
+get_current_account_or_none = account_dependencies.get_current_account_or_none
+get_current_active_account = account_dependencies.get_current_active_account
+get_current_active_superuser = account_dependencies.get_current_active_superuser
+RoleCheck = account_dependencies.RoleCheck

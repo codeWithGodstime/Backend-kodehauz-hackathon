@@ -1,7 +1,8 @@
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel
 
-from app import actions, models
+from app import models
+from app.actions import account_action, user_action, workspace_action
 from app.core.config import settings
 
 # make sure all SQL Alchemy models are imported (app.models) before initializing DB
@@ -9,7 +10,7 @@ from app.core.config import settings
 # for more details: https://github.com/tiangolo/full-stack-fastapi-postgresql/issues/28
 
 
-def init_db(engine: Engine, create_tables=False) -> None:
+def init_db(engine: Engine, create_tables: bool = False) -> None:
     # Tables should be created with Alembic migrations
     # But if you don't want to use migrations, specify True.
     if create_tables:
@@ -17,15 +18,40 @@ def init_db(engine: Engine, create_tables=False) -> None:
         SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        account = actions.account.get_by_email(session, email=settings.FIRST_SUPERUSER)
+        account = account_action.get_by_email(session, email=settings.FIRST_SUPERUSER)
         if not account:
             data = models.AccountCreate(
                 username=settings.FIRST_SUPERUSER,
                 email=settings.FIRST_SUPERUSER,
                 phone="",
                 password=settings.FIRST_SUPERUSER_PASSWORD,
-                status=models.account.AccountStatus.active,
-                role=models.account.AccountRole.admin,
+                status=models.AccountStatus.active,
+                role=models.AccountRole.admin,
                 profile=models.ProfileCreate(first_name="Super", last_name="User"),
             )
-            account = actions.account.create(session, data=data)  # noqa: F841
+            account = account_action.create(session, data=data)
+
+        workspace = workspace_action.ensure_default_workspace(
+            session,
+            owner_id=account.id,
+            commit=False,
+        )
+        membership = user_action.get_by_all(
+            session,
+            account_id=account.id,
+            workspace_id=workspace.id,
+        )
+        if membership is None:
+            user_action.create_membership(
+                session,
+                account_id=account.id,
+                workspace_id=workspace.id,
+                owner_id=workspace.owner_id,
+                commit=False,
+            )
+
+        if account.current_workspace_id is None:
+            account.current_workspace_id = workspace.id
+            session.add(account)
+
+        session.commit()

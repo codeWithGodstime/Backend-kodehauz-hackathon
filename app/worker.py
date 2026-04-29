@@ -1,9 +1,19 @@
-from raven import Client
+from celery import Celery
 
-from app.core.celery_app import celery_app
 from app.core.config import settings
 
-client_sentry = Client(settings.SENTRY_DSN)
+
+def get_broker_url() -> str:
+    if settings.REDIS_HOST:
+        password = f":{settings.REDIS_PASSWORD}@" if settings.REDIS_PASSWORD else ""
+        port = settings.REDIS_PORT or "6379"
+        return f"redis://{password}{settings.REDIS_HOST}:{port}/0"
+    return "memory://"
+
+
+broker_url = get_broker_url()
+celery_app = Celery("app.worker", broker=broker_url, backend=broker_url)
+celery_app.conf.task_default_queue = "main-queue"
 
 
 @celery_app.task(acks_late=True)

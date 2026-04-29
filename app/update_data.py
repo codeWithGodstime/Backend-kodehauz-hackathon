@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def update():
+def update() -> None:
     with Session(engine):
         SQLModel.metadata.create_all(engine)
 
