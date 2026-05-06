@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 def should_reset_db() -> bool:
+    # Ensure env variables are loaded.
+    from dotenv import load_dotenv
+
+    load_dotenv()
     return os.getenv("INITIAL_DATA_RESET_DB", "").strip().lower() in {
         "1",
         "true",

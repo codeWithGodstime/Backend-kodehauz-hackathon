@@ -18,6 +18,7 @@ from app.tests.conftest import engine as test_engine
 # Test that `init_db` is called with correct arguments
 @patch("app.initial_data.init_db")
 @patch("app.initial_data.Session")
+@patch.dict(os.environ, {"INITIAL_DATA_RESET_DB": "false"})
 def test_init(mock_session, mock_init_db):
     # Call init function
     init()

@@ -3,4 +3,6 @@
 set -e
 set -x
 
-pytest --cov=app --cov-report=term-missing app/tests "${@}"
+PYTEST_XDIST_WORKERS="${PYTEST_XDIST_WORKERS:-auto}"
+
+pytest -n "${PYTEST_XDIST_WORKERS}" --cov=app --cov-report=term-missing app/tests "${@}"

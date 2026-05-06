@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Dict, Generator
 
@@ -18,7 +19,12 @@ from app.core.config import settings
 from app.db.init_db import init_db
 from app.main import app
 
-TEST_DATABASE_URL = "sqlite:///./tmp/test.db"
+worker_id = os.getenv("PYTEST_XDIST_WORKER", "default")
+if worker_id == "default":
+    TEST_DATABASE_URL = "sqlite:///./tmp/test.db"
+else:
+    TEST_DATABASE_URL = f"sqlite:///./tmp/test_{worker_id}.db"
+
 DUMP_DB_QUERIES = False  # change to True to display all DB SQL queries
 
 Path("tmp").mkdir(parents=True, exist_ok=True)

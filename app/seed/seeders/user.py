@@ -1,6 +1,4 @@
-from typing import Any
-
-from msflib.seed.base import SeederBase
+from msflib.seed import BaseSeeder
 from msflib.seed.schema import ConfigSchema
 from msflib.seed.utils import get_dependency_value
 from sqlmodel import Session
@@ -9,12 +7,12 @@ from app import models
 from app.actions import user_action as ua
 
 
-class UserSeeder(SeederBase):
-    def __init__(self, config: ConfigSchema) -> None:
+class UserSeeder(BaseSeeder):
+    def __init__(self, config: ConfigSchema):
         self.config = config
         self.records = config.records if config.records else [ua.random().dict()]
 
-    def seed(self, session: Session, seeds: dict[str, Any]) -> None:
+    def seed(self, session: Session, seeds):
         accounts = seeds["accounts"]
         users = []
         update = get_dependency_value(self.config, seeds)
