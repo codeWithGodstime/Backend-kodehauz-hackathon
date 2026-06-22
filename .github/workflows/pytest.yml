@@ -1,37 +1,29 @@
 name: Pytest
 
 on:
-  push:
-    branches: [dev]
   pull_request:
-    branches: [dev, dev-new]
+    types: [opened, synchronize, labeled]
+    branches: [dev, main]
 
 jobs:
   build:
+    if: contains(github.event.pull_request.labels.*.name, 'ready-for-analysis')
     runs-on: ${{ vars.TASK_RUNNER || 'ubuntu-latest' }}
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-    env:
-      PROJECT_NAME: "Project Name"
-      SERVER_NAME: localhost
-      SERVER_HOST: https://localhost
-      FIRST_SUPERUSER: superuser@example.org
-      FIRST_SUPERUSER_PASSWORD: "some password"
-      CLIENT_NAME: localhost
-      CLIENT_HOST: https://localhost
-      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install dependencies
         run: |
           python3 -m venv venv
           source venv/bin/activate
+          python -m pip install --upgrade pip
           pip install poetry
           git config --global credential.helper '!echo "username=${{ github.actor }}"; echo "password=${{ secrets.PACKAGES_PAT }}";'
-          poetry install
+          poetry install --no-root
+
       - name: Run tests
         run: |
           source venv/bin/activate
-          mkdir ./tmp
+          mkdir -p ./tmp
           bash ./tests-start.sh

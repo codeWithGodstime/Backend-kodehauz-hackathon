@@ -1,10 +1,10 @@
 name: Flake8
 
-on: [push]
+on: [ pull_request ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.TASK_RUNNER || 'ubuntu-latest' }}
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
