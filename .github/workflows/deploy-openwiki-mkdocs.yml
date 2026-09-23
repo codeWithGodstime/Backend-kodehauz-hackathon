@@ -9,5 +9,5 @@ jobs:
     uses: msflib/devops/.github/workflows/deploy-openwiki-mkdocs.yml@dev
     with:
       python-version: '3.10'
-      destination-dir: 'fastapi-template'
+      destination-dir: 'fastapi/fastapi-template'
     secrets: inherit
