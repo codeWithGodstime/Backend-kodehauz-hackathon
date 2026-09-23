@@ -1,0 +1,41 @@
+site_name: MSF FastAPI Template Documentation
+site_description: Public docs for the MSF FastAPI starter template
+site_url: https://msflib.github.io/docsite/fastapi-template
+docs_dir: ./openwiki/docs
+site_dir: ./doc-site
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+  - gen_nav:
+      enabled: true
+
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - footnotes
+  - toc:
+      permalink: true

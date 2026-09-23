@@ -1,0 +1,13 @@
+name: Deploy OpenWiki MkDocs
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  deploy-mkdocs:
+    uses: msflib/devops/.github/workflows/deploy-openwiki-mkdocs.yml@dev
+    with:
+      python-version: '3.10'
+      destination-dir: 'fastapi-template'
+    secrets: inherit
