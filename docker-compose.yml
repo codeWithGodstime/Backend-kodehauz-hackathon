@@ -1,0 +1,107 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dbname
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dbname"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dbname
+      USE_SQLITE: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command:
+      [
+        "bash",
+        "-c",
+        "bash ./prestart.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dbname
+      USE_SQLITE: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: ["bash", "./worker-start.sh"]
+
+volumes:
+  postgres_data:
+  uploads:
+
+secrets:
+  npmrc:
+    file: ./.npmrc

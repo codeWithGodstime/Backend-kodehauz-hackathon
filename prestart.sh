@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+set -e
 
 # Let the DB start
-python ./app/backend_pre_start.py
+python -m app.backend_pre_start
 
 # Run migrations
 alembic upgrade head
 
 # Ensure required initial records exist without resetting existing tables/data.
-python ./app/initial_data.py
+python -m app.initial_data

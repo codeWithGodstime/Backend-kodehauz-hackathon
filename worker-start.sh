@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-python ./app/celeryworker_pre_start.py
+python -m app.celeryworker_pre_start
 
-celery worker -A app.worker:celery_app -l info -Q main-queue -c 1
+celery -A app.worker:celery_app worker -l info -Q main-queue -c 1
