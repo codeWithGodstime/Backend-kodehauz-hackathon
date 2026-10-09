@@ -35,6 +35,26 @@ class MessageCategory(BaseEnum):
     ignore = "ignore"
 
 
+class PlatformName(BaseEnum):
+    """Channel an admin can connect for a workspace.
+
+    Values match the platforms the admin UI offers. Webhook ingress still uses
+    ``channel_type`` ``whatsapp`` or ``meta``; Facebook and Instagram DMs share
+    the Meta messaging webhook.
+    """
+
+    whatsapp = "whatsapp"
+    facebook = "facebook"
+    instagram = "instagram"
+
+
+class PlatformConnectionStatus(BaseEnum):
+    """Whether the workspace is treating this platform as connected."""
+
+    connected = "connected"
+    disconnected = "disconnected"
+
+
 class SubscriptionPlan(ModelBase, table=True):
     """Catalog row shared by every workspace.
 
@@ -109,7 +129,8 @@ class IngestedMessage(ModelBase, table=True):
     The worker fills ``category`` and ``parsed_metadata``. Retries match
     ``workspace_id`` + ``channel_type`` + ``provider_message_id`` and do not
     insert a second row. ``timestamp`` is the source event time, separate
-    from ``created_at``.
+    from ``created_at``. ``display_phone_number`` is the WhatsApp business
+    number the message was sent to (Cloud API ``metadata.display_phone_number``).
     """
 
     __tablename__ = "ingested_message"
@@ -126,6 +147,7 @@ class IngestedMessage(ModelBase, table=True):
     channel_type: str = Field(max_length=32)
     provider_message_id: str = Field(max_length=512)
     sender: str | None = Field(default=None, max_length=255)
+    display_phone_number: str | None = Field(default=None, index=True, max_length=32)
     customer_id: int | None = Field(default=None, foreign_key="customer.id", index=True)
     raw_payload: str = Field(sa_column=Column(Text, nullable=False))
     category: MessageCategory | None = Field(default=None, index=True)
@@ -136,3 +158,37 @@ class IngestedMessage(ModelBase, table=True):
 
     workspace: Workspace = Relationship()
     customer: Customer | None = Relationship(back_populates="messages")
+
+
+class PlatformConnection(ModelBase, table=True):
+    """One connected platform for a workspace.
+
+    ``access_token`` is reserved for a real Meta token. Connect from the admin
+    UI does not invent one, and API reads never return this column.
+    ``display_phone_number`` and ``phone_number_id`` are the WhatsApp Cloud API
+    metadata fields. ``page_id`` is the Facebook Page id. ``instagram_business_account_id``
+    is the Instagram professional account id linked to that page.
+    """
+
+    __tablename__ = "platform_connection"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "platform",
+            name="uq_platform_connection_workspace_platform",
+        ),
+    )
+
+    workspace_id: int = Field(foreign_key="workspace.id", index=True)
+    platform: PlatformName = Field(index=True)
+    status: PlatformConnectionStatus = Field(
+        default=PlatformConnectionStatus.disconnected,
+        index=True,
+    )
+    display_phone_number: str | None = Field(default=None, index=True, max_length=32)
+    phone_number_id: str | None = Field(default=None, index=True, max_length=64)
+    page_id: str | None = Field(default=None, index=True, max_length=64)
+    instagram_business_account_id: str | None = Field(default=None, index=True, max_length=64)
+    access_token: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+
+    workspace: Workspace = Relationship()

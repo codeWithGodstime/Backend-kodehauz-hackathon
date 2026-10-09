@@ -22,6 +22,7 @@ class IncomingMessage:
     text: str
     timestamp: datetime
     raw_message: dict[str, Any]
+    display_phone_number: str | None = None
 
 
 def parse_incoming_messages(channel_type: str, payload: dict[str, Any]) -> list[IncomingMessage]:
@@ -34,10 +35,27 @@ def parse_incoming_messages(channel_type: str, payload: dict[str, Any]) -> list[
     return []
 
 
+def whatsapp_destination(payload: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Business number and phone number id from the first Cloud API value."""
+    for value in _whatsapp_values(payload):
+        metadata = value.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        phone = _as_id(metadata.get("display_phone_number"))
+        number_id = _as_id(metadata.get("phone_number_id"))
+        if phone or number_id:
+            return phone, number_id
+    return None, None
+
+
 def _parse_whatsapp(payload: dict[str, Any]) -> list[IncomingMessage]:
     messages: list[IncomingMessage] = []
     for value in _whatsapp_values(payload):
         names = _whatsapp_contact_names(value)
+        metadata = value.get("metadata")
+        display_phone = None
+        if isinstance(metadata, dict):
+            display_phone = _as_id(metadata.get("display_phone_number"))
         raw_messages = value.get("messages")
         if not isinstance(raw_messages, list):
             continue
@@ -58,6 +76,7 @@ def _parse_whatsapp(payload: dict[str, Any]) -> list[IncomingMessage]:
                     text=_whatsapp_text(raw),
                     timestamp=_parse_timestamp(raw.get("timestamp")),
                     raw_message=raw,
+                    display_phone_number=display_phone,
                 )
             )
     return messages

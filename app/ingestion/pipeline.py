@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from app.ingestion.classify import classify_message
 from app.ingestion.parse import SUPPORTED_CHANNELS, IncomingMessage, parse_incoming_messages
 from app.models import Customer, IngestedMessage, Workspace
+from app.platforms.phone import normalize_phone
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,7 @@ def persist_incoming_message(
         channel_type=message.channel_type,
         provider_message_id=message.provider_message_id,
         sender=message.sender or None,
+        display_phone_number=normalize_phone(message.display_phone_number),
         customer_id=customer.id if customer is not None else None,
         raw_payload=json.dumps(message.raw_message, ensure_ascii=False, default=str),
         category=extraction.message_category(),

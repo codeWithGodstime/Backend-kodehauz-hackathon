@@ -7,7 +7,15 @@ from msflib.workspaces.router import user_me_router
 
 from app import actions, models
 from app.api import deps
-from app.api.api_v1.endpoints import admin, billing, dashboard, webhooks, workspaces
+from app.api.api_v1.endpoints import (
+    admin,
+    billing,
+    dashboard,
+    members,
+    platform_connections,
+    webhooks,
+    workspaces,
+)
 from app.core.config import settings
 from app.eventbus.signup_workspace import SignupAccountCreate, signup_account_action
 
@@ -84,7 +92,9 @@ api_router.include_router(
         user_action=actions.user_action,
     )
 )
+api_router.include_router(members.router, tags=["users"])
 api_router.include_router(dashboard.router, tags=["dashboard"])
+api_router.include_router(platform_connections.router, tags=["platform-connections"])
 api_router.include_router(
     payments_router(
         get_session=deps.get_session,

@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 # Ensure env variables are loaded.
 load_dotenv()
 
-from sqlalchemy import inspect  # noqa: E402
+from sqlalchemy import inspect
 
-from .db.init_db import init_db  # noqa: E402
-from .db.session import Session, engine  # noqa: E402
+from .db.init_db import init_db
+from .db.session import Session, engine
+from .seed.demo import ensure_socialchef_seed
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,8 +52,9 @@ def should_reset_db() -> bool:
 
 
 def init() -> None:
-    with Session(engine):
-        init_db(engine, create_tables=should_reset_db())
+    init_db(engine, create_tables=should_reset_db())
+    with Session(engine) as session:
+        ensure_socialchef_seed(session)
 
 
 def main() -> None:

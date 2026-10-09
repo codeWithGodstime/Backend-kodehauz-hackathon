@@ -111,6 +111,27 @@ def test_worker_classifies_order_and_is_idempotent(session: Session, monkeypatch
     assert customer.phone == "2348012345678"
 
 
+def test_worker_records_business_number_and_mixes_enquiry_with_order(session: Session) -> None:
+    from scripts.simulate_whatsapp_webhook import MESSAGES, webhook_payload
+
+    workspace_id = _workspace_id(session)
+    categories = []
+    for index, message in enumerate(MESSAGES):
+        result = process_incoming_message(
+            session,
+            workspace_id=workspace_id,
+            channel_type="whatsapp",
+            raw_payload=webhook_payload(message, index=index),
+        )
+        row = session.get(IngestedMessage, result["ingested_message_ids"][0])
+        assert row is not None
+        assert row.display_phone_number == "2348095550100"
+        categories.append(str(row.category))
+    assert categories[0] == "enquiry"
+    assert categories[1] == "order"
+    assert "enquiry" in categories and "order" in categories
+
+
 def test_worker_classifies_enquiry(session: Session) -> None:
     result = process_incoming_message(
         session,

@@ -18,6 +18,9 @@ def get_broker_url() -> str:
 broker_url = get_broker_url()
 celery_app = Celery("app.worker", broker=broker_url, backend=broker_url)
 celery_app.conf.task_default_queue = "main-queue"
+if not settings.REDIS_HOST:
+    celery_app.conf.task_always_eager = True
+    celery_app.conf.task_eager_propagates = True
 
 
 @celery_app.task(acks_late=True)

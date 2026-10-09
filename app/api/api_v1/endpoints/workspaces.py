@@ -76,7 +76,7 @@ def _workspace_item(workspace: Any) -> WorkspaceListItem:
 
 
 @router.get("/workspaces", response_model=list[WorkspaceListItem])
-def list_workspaces(
+def list_owned_workspaces(
     session: Session = Depends(deps.get_session),
     offset: int = 0,
     limit: int = 100,
@@ -92,7 +92,7 @@ def list_workspaces(
 
 
 @router.get("/workspaces/available", response_model=list[WorkspaceListItem])
-def list_available_workspaces(
+def list_member_workspaces(
     session: Session = Depends(deps.get_session),
     offset: int = 0,
     limit: int = 100,

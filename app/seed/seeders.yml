@@ -66,3 +66,9 @@ seeders:
   users:
     name: users
     seeder_class: app.seed.seeders.UserSeeder
+
+  # Dev user, two members, and the connected WhatsApp business number.
+  # Idempotent. Also runs from `python -m app.initial_data`.
+  socialchef_demo:
+    name: socialchef_demo
+    seeder_class: app.seed.seeders.SocialchefDemoSeeder

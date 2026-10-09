@@ -17,11 +17,12 @@ from app.tests.conftest import engine as test_engine
 
 
 # 1. Test that `init_db` is called with correct arguments
+@patch("app.initial_data.ensure_socialchef_seed")
 @patch("app.initial_data.inspect")
 @patch("app.initial_data.init_db")
 @patch("app.initial_data.Session")
 @patch.dict(os.environ, {"INITIAL_DATA_RESET_DB": "false"})
-def test_init(mock_session, mock_init_db, mock_inspect):
+def test_init(mock_session, mock_init_db, mock_inspect, mock_seed):
     # Mock database tables existing
     mock_inspector = MagicMock()
     mock_inspector.get_table_names.return_value = ["workspace"]
@@ -36,6 +37,7 @@ def test_init(mock_session, mock_init_db, mock_inspect):
 
     # Verify `init_db` was called with a non-destructive default.
     mock_init_db.assert_called_once_with(production_engine, create_tables=False)
+    mock_seed.assert_called_once()
 
 
 # 2. Test that empty databases force table creation regardless of env setting
