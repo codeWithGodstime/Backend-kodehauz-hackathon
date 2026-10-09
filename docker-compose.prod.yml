@@ -1,0 +1,118 @@
+# Lean production stack for a 1GB droplet.
+# Usage (on server, in /opt/socialchef/backend):
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-socialchef}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - max_connections=50
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Not published to the host — only reachable on the compose network.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Service name "api" (not "backend") avoids name collisions with other
+  # deploys that `docker rm` containers matching *backend-*.
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-socialchef}
+      USE_SQLITE: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    # Host :8000 is for nginx on the droplet. Block public access with ufw
+    # (only 22/80/443 allowed). Avoid 127.0.0.1 bind — docker-proxy can fail to listen.
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command:
+      [
+        "bash",
+        "-c",
+        "bash ./prestart.prod.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-socialchef}
+      USE_SQLITE: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["bash", "./worker-start.sh"]
+
+volumes:
+  postgres_data:
+  uploads:
+
+secrets:
+  npmrc:
+    file: ./.npmrc

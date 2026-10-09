@@ -11,6 +11,7 @@ from app.api.api_v1.endpoints import (
     admin,
     billing,
     dashboard,
+    ingested_messages,
     members,
     platform_connections,
     webhooks,
@@ -95,6 +96,7 @@ api_router.include_router(
 api_router.include_router(members.router, tags=["users"])
 api_router.include_router(dashboard.router, tags=["dashboard"])
 api_router.include_router(platform_connections.router, tags=["platform-connections"])
+api_router.include_router(ingested_messages.router, tags=["ingested-messages"])
 api_router.include_router(
     payments_router(
         get_session=deps.get_session,

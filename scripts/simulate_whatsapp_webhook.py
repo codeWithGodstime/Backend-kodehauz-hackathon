@@ -17,6 +17,7 @@ Usage (from the backend repo root, with META_APP_SECRET matching the API):
 
     python scripts/simulate_whatsapp_webhook.py
     python scripts/simulate_whatsapp_webhook.py --base-url http://localhost:8000/api/v1
+    python scripts/simulate_whatsapp_webhook.py --interval 10
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -56,7 +58,7 @@ MESSAGES: tuple[dict[str, str], ...] = (
         "provider_message_id": "wamid.sim.enquiry.2",
         "sender": "2348091001003",
         "sender_name": "Ngozi",
-        "body": "How much is a plate of fried rice?",
+        "body": "How much does fried rice cost?",
     },
     {
         "provider_message_id": "wamid.sim.order.2",
@@ -151,12 +153,36 @@ def main(argv: list[str] | None = None) -> int:
         default=os.environ.get("SOCIALCHEF_API_URL", "http://localhost:8000/api/v1"),
         help="API prefix, default http://localhost:8000/api/v1",
     )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=None,
+        metavar="SECONDS",
+        help="Send one message every SECONDS, looping forever (unique ids each time).",
+    )
     args = parser.parse_args(argv)
     secret = os.environ.get("META_APP_SECRET", "").strip()
     if not secret:
         print("Set META_APP_SECRET to the same value the API uses.", file=sys.stderr)
         return 1
     url = args.base_url.rstrip("/") + "/webhooks/whatsapp/inbound"
+    if args.interval is not None:
+        if args.interval <= 0:
+            print("--interval must be positive.", file=sys.stderr)
+            return 1
+        print(
+            f"Looping every {args.interval}s to {BUSINESS_DISPLAY_PHONE_NUMBER} at {url}"
+        )
+        index = 0
+        while True:
+            template = MESSAGES[index % len(MESSAGES)]
+            message = {
+                **template,
+                "provider_message_id": f"wamid.sim.loop.{int(time.time() * 1000)}",
+            }
+            post_message(url, secret, message, index=index)
+            index += 1
+            time.sleep(args.interval)
     print(f"Sending {len(MESSAGES)} messages to {BUSINESS_DISPLAY_PHONE_NUMBER}")
     failures = 0
     for index, message in enumerate(MESSAGES):

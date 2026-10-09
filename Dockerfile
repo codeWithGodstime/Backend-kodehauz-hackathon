@@ -51,9 +51,9 @@ WORKDIR /app
 
 # Copy installed packages from the builder stage
 COPY --from=builder /app /app
-COPY prestart.sh worker-start.sh ./
-RUN python -c "from pathlib import Path; [Path(name).write_bytes(Path(name).read_bytes().replace(bytes([13, 10]), bytes([10]))) for name in ('prestart.sh', 'worker-start.sh')]" \
-    && chmod +x prestart.sh worker-start.sh \
+COPY prestart.sh prestart.prod.sh worker-start.sh ./
+RUN python -c "from pathlib import Path; [Path(name).write_bytes(Path(name).read_bytes().replace(bytes([13, 10]), bytes([10]))) for name in ('prestart.sh', 'prestart.prod.sh', 'worker-start.sh')]" \
+    && chmod +x prestart.sh prestart.prod.sh worker-start.sh \
     && mkdir -p /app/uploads
 
 # Ensure SQLite database file persists as a volume
