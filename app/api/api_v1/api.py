@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-
 from msflib.account.router import account_router, profile_router
 from msflib.auth.router import router as auth_router
 

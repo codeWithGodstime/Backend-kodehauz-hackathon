@@ -1,16 +1,15 @@
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
 
 # Ensure env variables are loaded.
 load_dotenv()
 
 from sqlalchemy import inspect  # noqa: E402
+
 from .db.init_db import init_db  # noqa: E402
 from .db.session import Session, engine  # noqa: E402
-from .bootstrap import bootstrap_module_hooks  # noqa: E402
-
-bootstrap_module_hooks()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,6 +34,7 @@ def should_reset_db() -> bool:
     # This is robust against pre-existing system or extension tables
     # (e.g., PostGIS spatial_ref_sys).
     from sqlmodel import SQLModel
+
     from app import models  # noqa: F401
 
     app_tables = {table.name.lower() for table in SQLModel.metadata.tables.values()}

@@ -1,24 +1,20 @@
 from msflib.account.models import (
     AccountCreate,
-    AccountRole,
     AccountRead,
     AccountReadPublic,
     AccountReadPublicProfile,
+    AccountRole,
     AccountStatus,
     AccountUpdate,
-)
-from msflib.account.models.account import Account
-
-from msflib.account.models import (
     ProfileCreate,
     ProfileRead,
     ProfileSmall,
     ProfileUpdate,
     UserProfile,
 )
-
-from msflib.account.models.account import Profile
-
+from msflib.account.models.account import Account, Profile
+from msflib.tenancy.models import TenantCreate, TenantUpdate
+from msflib.tenancy.models.tenant import Tenant
 from msflib.workspaces.models import (
     UserCreate,
     UserRead,
@@ -27,6 +23,5 @@ from msflib.workspaces.models import (
     WorkspaceCreate,
     WorkspaceUpdate,
 )
-
-from msflib.workspaces.models.workspace import Workspace
 from msflib.workspaces.models.user import User
+from msflib.workspaces.models.workspace import Workspace

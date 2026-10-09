@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -8,7 +6,7 @@ from app.core.config import settings
 
 @pytest.mark.skip(reason="Celery not yet configured")
 def test_celery_worker_test(
-    client: TestClient, superuser_account_token_headers: Dict[str, str]
+    client: TestClient, superuser_account_token_headers: dict[str, str]
 ) -> None:
     data = {"msg": "test"}
     r = client.post(

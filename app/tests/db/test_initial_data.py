@@ -1,16 +1,17 @@
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from unittest.mock import patch, MagicMock
 from sqlmodel import Session
 
-from app.initial_data import init, main, should_reset_db
-from app.db.session import engine as production_engine
-from app.actions import account_action as aa, user_action as ua
+from app.actions import account_action as aa
+from app.actions import user_action as ua
 from app.core.config import settings
 from app.db.init_db import init_db
+from app.db.session import engine as production_engine
+from app.initial_data import init, main, should_reset_db
 from app.models import Workspace
 from app.tests.conftest import engine as test_engine
 

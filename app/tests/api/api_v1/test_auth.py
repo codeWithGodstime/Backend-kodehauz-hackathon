@@ -1,12 +1,10 @@
-from typing import Dict
-
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
 
 
 def test_use_access_token(
-    client: TestClient, superuser_account_token_headers: Dict[str, str]
+    client: TestClient, superuser_account_token_headers: dict[str, str]
 ) -> None:
     r = client.get(
         f"{settings.API_V1_STR}/me",
@@ -18,7 +16,7 @@ def test_use_access_token(
 
 
 def test_clear_access_token(
-    client: TestClient, superuser_account_token_headers: Dict[str, str]
+    client: TestClient, superuser_account_token_headers: dict[str, str]
 ) -> None:
     r = client.get(
         f"{settings.API_V1_STR}/me",

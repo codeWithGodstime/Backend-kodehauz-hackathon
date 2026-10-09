@@ -46,8 +46,7 @@ def normalize_git_url(url: str) -> str:
     parsed = urlsplit(url)
     host = parsed.hostname or ""
     path = parsed.path.rstrip("/")
-    if path.endswith(".git"):
-        path = path[:-4]
+    path = path.removesuffix(".git")
     return f"{parsed.scheme}://{host}{path}".lower()
 
 

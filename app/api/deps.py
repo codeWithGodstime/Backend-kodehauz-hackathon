@@ -5,7 +5,6 @@ from msflib.auth.deps import get_account_dependencies
 
 from ..core.config import settings
 from ..db.session import engine
-
 from ..models import Account, AccountStatus
 
 logging.basicConfig(level=logging.INFO)

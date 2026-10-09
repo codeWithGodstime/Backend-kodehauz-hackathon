@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from msflib.eventbus import bind_app_emitter
 from starlette.middleware.cors import CORSMiddleware
 
 from .api.api_v1.api import api_router
-from .core.config import settings
 from .bootstrap import bootstrap_module_hooks
-
-bootstrap_module_hooks()
+from .core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json")
+app_emitter = bind_app_emitter(app)
+bootstrap_module_hooks(app_emitter)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:

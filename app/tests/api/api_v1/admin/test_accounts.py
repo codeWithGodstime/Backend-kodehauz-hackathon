@@ -1,12 +1,10 @@
-from typing import Dict
-
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
 
 
 def test_admin_accounts_list_smoke(
-    client: TestClient, superuser_account_token_headers: Dict[str, str]
+    client: TestClient, superuser_account_token_headers: dict[str, str]
 ) -> None:
     response = client.get(
         f"{settings.API_V1_STR}/admin/accounts/",

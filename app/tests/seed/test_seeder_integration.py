@@ -1,5 +1,5 @@
-from pathlib import Path
 import textwrap
+from pathlib import Path
 
 from app.actions import account_action as aa
 from app.seed import runner

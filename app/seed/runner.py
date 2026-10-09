@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 from msflib.seed.cli import run_seed_cli
 
@@ -12,7 +12,7 @@ def _import_models() -> None:
     from app import models  # noqa: F401
 
 
-def main(argv: Optional[Sequence[str]] = None) -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     seed_dir = Path(__file__).resolve().parent
     run_seed_cli(
         argv=argv,
