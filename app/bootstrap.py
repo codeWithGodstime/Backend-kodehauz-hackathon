@@ -2,7 +2,9 @@ from msflib.eventbus import AppEmitter
 from msflib.workspaces.eventbus import register_event_hooks
 
 from .actions import account_action, user_action, workspace_action
+from .billing.fulfilment import register_subscription_fulfilment
 from .core.config import settings
+from .eventbus.signup_workspace import register_signup_workspace
 
 _hooks_registered = False
 
@@ -20,4 +22,6 @@ def bootstrap_module_hooks(emitter: AppEmitter) -> None:
             emitter=emitter,
             tenancy_settings=settings.scope("TENANCY"),
         )
+    register_subscription_fulfilment(emitter)
+    register_signup_workspace(emitter)
     _hooks_registered = True
