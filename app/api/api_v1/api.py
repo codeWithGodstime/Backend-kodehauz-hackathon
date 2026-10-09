@@ -1,11 +1,15 @@
 from fastapi import APIRouter
 from msflib.account.router import account_router, profile_router
 from msflib.auth.router import router as auth_router
+from msflib.payments.router import router as payments_router
+from msflib.workspaces.router import router as workspace_router
+from msflib.workspaces.router import user_me_router
 
-from app import models
+from app import actions, models
 from app.api import deps
-from app.api.api_v1.endpoints import admin
+from app.api.api_v1.endpoints import admin, billing, dashboard, webhooks, workspaces
 from app.core.config import settings
+from app.eventbus.signup_workspace import SignupAccountCreate, signup_account_action
 
 api_router = APIRouter()
 
@@ -31,6 +35,8 @@ api_router.include_router(
         account_type=models.Account,
         profile_type=models.Profile,
         account_read_type=models.AccountRead,
+        account_create_type=SignupAccountCreate,
+        account_action=signup_account_action,
         prefix="",
         tags=["accounts"],
     )
@@ -51,3 +57,39 @@ api_router.include_router(
 )
 
 api_router.include_router(admin.router, prefix="/admin")
+api_router.include_router(billing.router, prefix="/billing", tags=["billing"])
+api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
+api_router.include_router(workspaces.router, tags=["workspaces"])
+api_router.include_router(
+    workspace_router(
+        get_session=deps.get_session,
+        get_current_account=deps.get_current_account,
+        get_current_account_or_none=deps.get_current_account_or_none,
+        role_check=deps.RoleCheck,
+        settings=settings,
+        account_type=models.Account,
+        workspace_type=models.Workspace,
+        user_type=models.User,
+        workspace_action=actions.workspace_action,
+        user_action=actions.user_action,
+    )
+)
+api_router.include_router(
+    user_me_router(
+        get_session=deps.get_session,
+        get_current_account=deps.get_current_account,
+        get_current_active_account=deps.get_current_active_account,
+        get_current_workspace=deps.get_current_workspace,
+        user_type=models.User,
+        user_action=actions.user_action,
+    )
+)
+api_router.include_router(dashboard.router, tags=["dashboard"])
+api_router.include_router(
+    payments_router(
+        get_session=deps.get_session,
+        get_current_account=deps.get_current_account,
+        settings=settings,
+        prefix="/payments",
+    )
+)
