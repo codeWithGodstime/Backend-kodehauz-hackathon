@@ -56,7 +56,9 @@ def _store(plans: list[SubscriptionPlan]) -> None:
 
 def _load(session: Session) -> list[SubscriptionPlan]:
     rows = list(
-        session.exec(select(SubscriptionPlan).order_by(SubscriptionPlan.amount_kobo)).all()
+        session.exec(
+            select(SubscriptionPlan).order_by(SubscriptionPlan.amount_kobo)
+        ).all()
     )
     for row in rows:
         session.expunge(row)

@@ -6,7 +6,9 @@ from app.core.config import settings
 from app.models.socialchef import SubscriptionPlan, SubscriptionTier
 
 
-def test_list_subscription_plans_is_public(client: TestClient, session: Session) -> None:
+def test_list_subscription_plans_is_public(
+    client: TestClient, session: Session
+) -> None:
     session.add(
         SubscriptionPlan(
             plan_key="free",
@@ -47,7 +49,9 @@ def test_list_subscription_plans_is_public(client: TestClient, session: Session)
     assert body[1]["amount_kobo"] == 500000
     assert body[1]["currency"] == "NGN"
     assert body[1]["plan_code"] == "PLN_test"
-    assert response.headers["cache-control"] == f"public, max-age={PLAN_CACHE_TTL_SECONDS}"
+    assert (
+        response.headers["cache-control"] == f"public, max-age={PLAN_CACHE_TTL_SECONDS}"
+    )
 
 
 def test_subscription_plans_stay_cached_for_every_user(

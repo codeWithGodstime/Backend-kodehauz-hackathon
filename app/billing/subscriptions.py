@@ -201,7 +201,9 @@ async def fulfil_paid_subscription(queue: Any, session: Session) -> None:
     customer = await _customer_from_paystack(str(reference))
     row.tier = SubscriptionTier.paid
     row.plan_code = str(plan_code)
-    row.gateway_customer_email = customer.get("email") or getattr(payment, "email", None)
+    row.gateway_customer_email = customer.get("email") or getattr(
+        payment, "email", None
+    )
     if customer.get("customer_code"):
         row.gateway_customer_code = str(customer["customer_code"])[:255]
     _store_card(row, customer.get("authorization") or {})
@@ -210,12 +212,18 @@ async def fulfil_paid_subscription(queue: Any, session: Session) -> None:
     session.add(row)
 
 
-def _get_or_create_subscription(session: Session, workspace_id: int) -> WorkspaceSubscription:
+def _get_or_create_subscription(
+    session: Session, workspace_id: int
+) -> WorkspaceSubscription:
     row = session.exec(
-        select(WorkspaceSubscription).where(WorkspaceSubscription.workspace_id == workspace_id)
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace_id
+        )
     ).first()
     if row is None:
-        row = WorkspaceSubscription(workspace_id=workspace_id, tier=SubscriptionTier.free)
+        row = WorkspaceSubscription(
+            workspace_id=workspace_id, tier=SubscriptionTier.free
+        )
         session.add(row)
         session.flush()
     return row
@@ -269,7 +277,9 @@ async def _customer_from_paystack(reference: str) -> dict[str, Any]:
     url = f"{payments.PAYSTACK_BASE_URL}/transaction/verify/{quote(reference, safe='')}"
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=10.0)) as client:
-            response = await client.get(url, headers={"Authorization": f"Bearer {secret}"})
+            response = await client.get(
+                url, headers={"Authorization": f"Bearer {secret}"}
+            )
         response.raise_for_status()
         payload = response.json()
     except (httpx.HTTPError, ValueError):
@@ -279,7 +289,9 @@ async def _customer_from_paystack(reference: str) -> dict[str, Any]:
     if not isinstance(data, dict):
         return {}
     customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
-    authorization = data.get("authorization") if isinstance(data.get("authorization"), dict) else {}
+    authorization = (
+        data.get("authorization") if isinstance(data.get("authorization"), dict) else {}
+    )
     return {
         "email": customer.get("email"),
         "customer_code": customer.get("customer_code"),

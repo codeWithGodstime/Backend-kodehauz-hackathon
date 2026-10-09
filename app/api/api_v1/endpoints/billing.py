@@ -67,7 +67,9 @@ def read_subscription_plans(
     return plans
 
 
-@router.post("/workspaces/{workspace_id}/checkout", response_model=SubscriptionCheckoutResponse)
+@router.post(
+    "/workspaces/{workspace_id}/checkout", response_model=SubscriptionCheckoutResponse
+)
 async def start_checkout(
     workspace_id: int,
     body: SubscriptionCheckoutRequest,
@@ -77,7 +79,9 @@ async def start_checkout(
     workspace = session.get(models.Workspace, workspace_id)
     if workspace is None:
         raise HTTPException(status_code=404, detail="Workspace not found")
-    membership = user_action.get_by_all(session, account_id=account.id, workspace_id=workspace_id)
+    membership = user_action.get_by_all(
+        session, account_id=account.id, workspace_id=workspace_id
+    )
     if membership is None:
         raise HTTPException(status_code=403, detail="Not a member of this workspace")
 
