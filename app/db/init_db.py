@@ -2,7 +2,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel
 
 from app import models
-from app.actions import account_action, user_action, workspace_action
+from app.actions import account_action, tenant_action, user_action, workspace_action
 from app.core.config import settings
 
 # make sure all SQL Alchemy models are imported (app.models) before initializing DB
@@ -18,6 +18,7 @@ def init_db(engine: Engine, create_tables: bool = False) -> None:
         SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
+        tenant = tenant_action.ensure_default_tenant(session, settings=settings.scope("TENANCY"))
         account = account_action.get_by_email(session, email=settings.FIRST_SUPERUSER)
         if not account:
             data = models.AccountCreate(
@@ -34,6 +35,7 @@ def init_db(engine: Engine, create_tables: bool = False) -> None:
         workspace = workspace_action.ensure_default_workspace(
             session,
             owner_id=account.id,
+            tenant=tenant,
             commit=False,
         )
         membership = user_action.get_by_all(

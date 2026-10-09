@@ -1,17 +1,16 @@
 import os
+from collections.abc import Generator
 from pathlib import Path
-from typing import Dict, Generator
 
 import pytest
 from faker import Faker
 from fastapi.testclient import TestClient
-from sqlmodel import Session, create_engine
-
 from msflib.core.store import MapStore
 from msflib.utils.tests.account import (
     account_authentication_headers,
     authentication_token_from_email,
 )
+from sqlmodel import Session, create_engine
 
 from app.actions import account_action
 from app.api.deps import get_keystore, get_session
@@ -40,7 +39,7 @@ engine = create_engine(
 # These two event listeners are only needed for sqlite for proper
 # SAVEPOINT / nested transaction support. Other databases like postgres
 # don't need them.
-# From: https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#serializable-isolation-savepoints-transactional-ddl  # noqa
+# From: https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#serializable-isolation-savepoints-transactional-ddl  # noqa: E501
 # @sa.event.listens_for(engine, "connect")
 # def do_connect(dbapi_connection, connection_record):
 #     # disable pysqlite's emitting of the BEGIN statement entirely.
@@ -120,7 +119,7 @@ def client(session, mapstore) -> Generator:
 
 
 @pytest.fixture(scope="function")
-def superuser_account_token_headers(client: TestClient) -> Dict[str, str]:
+def superuser_account_token_headers(client: TestClient) -> dict[str, str]:
     return account_authentication_headers(
         client=client,
         email=settings.FIRST_SUPERUSER,
@@ -130,7 +129,7 @@ def superuser_account_token_headers(client: TestClient) -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def normal_account_token_headers(client: TestClient, session: Session) -> Dict[str, str]:
+def normal_account_token_headers(client: TestClient, session: Session) -> dict[str, str]:
     return authentication_token_from_email(
         client=client,
         email=settings.EMAIL_TEST_ACCOUNT,

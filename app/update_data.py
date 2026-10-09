@@ -1,8 +1,9 @@
 import logging
 
-from app.db.session import Session, engine
 from sqlmodel import SQLModel
+
 from app import models  # noqa: F401
+from app.db.session import Session, engine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

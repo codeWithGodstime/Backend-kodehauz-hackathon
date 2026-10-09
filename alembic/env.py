@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import os
 import sys
 from logging.config import fileConfig
@@ -13,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 from app.models import *  # noqa
-from app.core.config import settings  # noqa
+from app.core.config import settings  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

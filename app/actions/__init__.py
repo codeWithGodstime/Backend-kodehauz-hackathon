@@ -1,5 +1,6 @@
 from msflib.account.actions import AccountAction, ProfileAction
-from msflib.workspaces.actions import WorkspaceAction, UserAction
+from msflib.tenancy import TenantAction
+from msflib.workspaces.actions import UserAction, WorkspaceAction
 
 from ..core.config import settings
 from ..models import (
@@ -9,6 +10,9 @@ from ..models import (
     Profile,
     ProfileCreate,
     ProfileUpdate,
+    Tenant,
+    TenantCreate,
+    TenantUpdate,
     User,
     UserCreate,
     UserUpdate,
@@ -16,6 +20,8 @@ from ..models import (
     WorkspaceCreate,
     WorkspaceUpdate,
 )
+
+tenant_action = TenantAction[Tenant, TenantCreate, TenantUpdate]()
 
 account_action = AccountAction[Account, AccountCreate, AccountUpdate](settings=settings)
 

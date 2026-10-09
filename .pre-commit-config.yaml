@@ -1,9 +1,9 @@
 repos:
   # Handles Ruff (lint + format + import sort + autoflake)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.3
+    rev: v0.16.10
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: ["--fix"] # Auto-fix lint issues
       - id: ruff-format # Format code
 

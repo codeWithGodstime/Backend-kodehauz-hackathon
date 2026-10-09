@@ -1,0 +1,13 @@
+name: OpenWiki Update
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [dev]
+
+jobs:
+  update-docs:
+    uses: msflib/devops/.github/workflows/openwiki-update.yml@dev
+    with:
+      node-version: '22'
+    secrets: inherit

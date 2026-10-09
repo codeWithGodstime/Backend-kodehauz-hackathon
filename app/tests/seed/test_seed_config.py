@@ -1,5 +1,5 @@
-from pathlib import Path
 from importlib import import_module
+from pathlib import Path
 
 from msflib.seed.utils import get_yml_config
 

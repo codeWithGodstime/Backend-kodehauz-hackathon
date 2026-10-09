@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-
 from msflib.account.router import account_admin_router
 
 from app import actions, models
