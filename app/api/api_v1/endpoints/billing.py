@@ -1,6 +1,6 @@
 """Workspace checkout. Verification is the msflib payments route."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from msflib.models import SchemaBase
 from msflib.payments.service.error import PaymentError
 from sqlmodel import Session
@@ -8,6 +8,7 @@ from sqlmodel import Session
 from app import models
 from app.actions import user_action
 from app.api import deps
+from app.billing.plan_cache import plan_cache_control
 from app.billing.subscriptions import (
     PlanNotBillable,
     PlanNotSeeded,
@@ -43,6 +44,7 @@ class SubscriptionCheckoutResponse(SchemaBase):
 
 @router.get("/subscription-plans", response_model=list[SubscriptionPlanRead])
 def read_subscription_plans(
+    response: Response,
     session: Session = Depends(deps.get_session),
 ) -> list[SubscriptionPlanRead]:
     plans = []
@@ -61,6 +63,7 @@ def read_subscription_plans(
                 plan_code=plan.plan_code,
             )
         )
+    response.headers["Cache-Control"] = plan_cache_control(bool(plans))
     return plans
 
 

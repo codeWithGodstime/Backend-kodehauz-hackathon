@@ -14,6 +14,7 @@ from sqlmodel import Session, create_engine
 
 from app.actions import account_action
 from app.api.deps import get_keystore, get_session
+from app.billing.plan_cache import clear_subscription_plan_cache
 from app.core.config import settings
 from app.db.init_db import init_db
 from app.main import app
@@ -55,6 +56,7 @@ engine = create_engine(
 
 @pytest.fixture(scope="function")
 def session() -> Generator:
+    clear_subscription_plan_cache()
     init_db(engine, create_tables=True)
     with Session(engine) as session:
         yield session

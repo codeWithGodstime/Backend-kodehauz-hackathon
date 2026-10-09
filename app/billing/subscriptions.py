@@ -14,6 +14,7 @@ from msflib.workspaces.models.workspace import Workspace
 from sqlmodel import Session, select
 
 from app.billing.gateway import install_plan_gateway
+from app.billing.plan_cache import cached_subscription_plans
 from app.billing.plan_context import paystack_plan_code
 from app.core.config import settings
 from app.models.socialchef import (
@@ -53,27 +54,39 @@ def kobo_to_major(amount_kobo: int) -> float:
 
 
 def list_subscription_plans(session: Session) -> list[SubscriptionPlan]:
-    return list(session.exec(select(SubscriptionPlan).order_by(SubscriptionPlan.amount_kobo)).all())
+    return cached_subscription_plans(session)
 
 
 def get_paid_monthly_plan(session: Session) -> SubscriptionPlan | None:
-    return session.exec(
-        select(SubscriptionPlan).where(SubscriptionPlan.plan_key == PAID_MONTHLY_PLAN_KEY)
-    ).first()
+    return _plan_matching(session, plan_key=PAID_MONTHLY_PLAN_KEY)
 
 
 def get_plan_by_code(session: Session, plan_code: str) -> SubscriptionPlan | None:
     code = plan_code.strip()
     if not code:
         return None
-    return session.exec(select(SubscriptionPlan).where(SubscriptionPlan.plan_code == code)).first()
+    return _plan_matching(session, plan_code=code)
 
 
 def get_plan_by_key(session: Session, plan_key: str) -> SubscriptionPlan | None:
     key = plan_key.strip()
     if not key:
         return None
-    return session.exec(select(SubscriptionPlan).where(SubscriptionPlan.plan_key == key)).first()
+    return _plan_matching(session, plan_key=key)
+
+
+def _plan_matching(
+    session: Session,
+    *,
+    plan_key: str | None = None,
+    plan_code: str | None = None,
+) -> SubscriptionPlan | None:
+    for plan in cached_subscription_plans(session):
+        if plan_key is not None and plan.plan_key == plan_key:
+            return plan
+        if plan_code is not None and plan.plan_code == plan_code:
+            return plan
+    return None
 
 
 def signup_plan_selection(session: Session, data: Any) -> dict[str, Any]:
