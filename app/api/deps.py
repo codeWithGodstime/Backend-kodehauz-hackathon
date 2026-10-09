@@ -1,11 +1,12 @@
 import logging
 
 from msflib.api.deps import get_keystore_factory, get_session_factory
-from msflib.auth.deps import get_account_dependencies
+from msflib.auth.deps import get_account_dependencies, get_user_dependencies
+from msflib.auth.resolvers import PathParameterResolver
 
 from ..core.config import settings
 from ..db.session import engine
-from ..models import Account, AccountStatus
+from ..models import Account, AccountStatus, User, Workspace
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,3 +35,16 @@ get_current_account_or_none = account_dependencies.get_current_account_or_none
 get_current_active_account = account_dependencies.get_current_active_account
 get_current_active_superuser = account_dependencies.get_current_active_superuser
 RoleCheck = account_dependencies.RoleCheck
+
+user_dependencies = get_user_dependencies(
+    UserModel=User,
+    WorkspaceModel=Workspace,
+    session_dep=get_session,
+    account_dependencies=account_dependencies,
+    workspace_resolver=PathParameterResolver(),
+)
+
+get_current_workspace = user_dependencies.get_current_workspace
+get_current_user = user_dependencies.get_current_user
+get_current_active_user = user_dependencies.get_current_active_user
+WorkspaceRoleCheck = user_dependencies.WorkspaceRoleCheck
